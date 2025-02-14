@@ -1,22 +1,44 @@
 from cryptography.fernet import Fernet
+import os
 
-# Generate an AES encryption key
-key = Fernet.generate_key()
+# Path to the key file
+KEY_FILE_PATH = "audio_encrypt_decrypt/keys/secret.key"
 
-# Save the key to a file
-with open("audio_encryption/keys/secret.key", "wb") as key_file:
-    key_file.write(key)
+# Generate and save a new AES encryption key
+def generate_key():
+    key = Fernet.generate_key()
+    os.makedirs(os.path.dirname(KEY_FILE_PATH), exist_ok=True)  # Create directory if it doesn't exist
+    with open(KEY_FILE_PATH, "wb") as key_file:
+        key_file.write(key)
+    print("✅ New AES Key Generated and Saved!")
 
-print("✅ AES Key Generated: keys/secret.key")
+# Save a custom key provided by the user
+def save_custom_key(custom_key):
+    try:
+        # Validate the custom key
+        Fernet(custom_key)  # This will raise an exception if the key is invalid
+        os.makedirs(os.path.dirname(KEY_FILE_PATH), exist_ok=True)
+        with open(KEY_FILE_PATH, "wb") as key_file:
+            key_file.write(custom_key)
+        print("✅ Custom Key Saved!")
+        return True
+    except Exception as e:
+        print(f"❌ Invalid Key: {e}")
+        return False
 
-import numpy as np
-from scipy.fft import fft, ifft
-from cryptography.fernet import Fernet
-
-# Load AES encryption key
+# Load the current AES encryption key
 def load_aes_key():
-    with open("keys/secret.key", "rb") as key_file:
+    if not os.path.exists(KEY_FILE_PATH):
+        generate_key()  # Generate a key if it doesn't exist
+    with open(KEY_FILE_PATH, "rb") as key_file:
         return Fernet(key_file.read())
+
+# View the current key
+def view_key():
+    if not os.path.exists(KEY_FILE_PATH):
+        generate_key()  # Generate a key if it doesn't exist
+    with open(KEY_FILE_PATH, "rb") as key_file:
+        return key_file.read().decode()
 
 # Fourier Transform + AES Encryption
 def encrypt_audio(data):

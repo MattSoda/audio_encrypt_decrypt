@@ -1,8 +1,8 @@
 import tkinter as tk
-from tkinter import messagebox, filedialog
+from tkinter import messagebox, filedialog, simpledialog
 import numpy as np
 from audio_utils import record_audio, play_audio, save_audio
-from encryptor import encrypt_audio, decrypt_audio
+from encryptor import encrypt_audio, decrypt_audio, view_key, save_custom_key
 
 # Global variables
 sample_rate = None
@@ -87,6 +87,15 @@ def show_key():
     if key:
         messagebox.showinfo("Secret Key", f"🔑 Current Key:\n{key}")
 
+def change_key():
+    # Ask the user to input a custom key
+    custom_key = simpledialog.askstring("Change Key", "Enter a new key (must be a valid Fernet key):")
+    if custom_key:
+        if save_custom_key(custom_key.encode()):  # Convert the key to bytes
+            messagebox.showinfo("Success", "Custom key saved successfully!")
+        else:
+            messagebox.showerror("Error", "Invalid key! Please enter a valid Fernet key.")
+
 # GUI Setup
 window = tk.Tk()
 window.title("Real-Time AES Audio Encryption")
@@ -102,5 +111,9 @@ tk.Button(window, text="💾 Save Encrypted", command=save_encrypted, width=20, 
 tk.Button(window, text="💾 Save Decrypted", command=save_decrypted, width=20, height=2).pack(pady=10)
 tk.Button(window, text="📂 Upload & Decrypt", command=upload_and_decrypt, width=20, height=2).pack(pady=10)
 tk.Button(window, text="▶️ Play Decrypted File", command=play_uploaded_decrypted, width=20, height=2).pack(pady=10)
+
+# Add buttons for key management
+tk.Button(window, text="🔑 View Key", command=show_key, width=20, height=2).pack(pady=10)
+tk.Button(window, text="🔄 Change Key", command=change_key, width=20, height=2).pack(pady=10)
 
 window.mainloop()
