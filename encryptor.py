@@ -1,23 +1,27 @@
 from cryptography.fernet import Fernet
 import os
+import numpy as np
+from scipy.fft import fft, ifft
 
 # Path to the key file
 KEY_FILE_PATH = "audio_encrypt_decrypt/keys/secret.key"
 
+# Ensure the keys directory exists
+os.makedirs(os.path.dirname(KEY_FILE_PATH), exist_ok=True)
+
 # Generate and save a new AES encryption key
 def generate_key():
     key = Fernet.generate_key()
-    os.makedirs(os.path.dirname(KEY_FILE_PATH), exist_ok=True)  # Create directory if it doesn't exist
     with open(KEY_FILE_PATH, "wb") as key_file:
         key_file.write(key)
     print("✅ New AES Key Generated and Saved!")
+    return key
 
 # Save a custom key provided by the user
 def save_custom_key(custom_key):
     try:
         # Validate the custom key
         Fernet(custom_key)  # This will raise an exception if the key is invalid
-        os.makedirs(os.path.dirname(KEY_FILE_PATH), exist_ok=True)
         with open(KEY_FILE_PATH, "wb") as key_file:
             key_file.write(custom_key)
         print("✅ Custom Key Saved!")
