@@ -3,6 +3,7 @@ from tkinter import messagebox, filedialog, simpledialog
 import numpy as np
 from audio_utils import record_audio, play_audio, save_audio
 from encryptor import encrypt_audio, decrypt_audio, view_key, save_custom_key, generate_key
+import matplotlib.pyplot as plt
 
 # Global variables
 sample_rate = None
@@ -120,6 +121,44 @@ def generate_new_key():
     new_key = generate_key()
     messagebox.showinfo("Success", "New key generated and saved successfully!")
 
+# Waveform Visualization Functions
+def view_all_waveforms():
+    if recorded_audio is None:
+        messagebox.showwarning("Warning", "Record audio first!")
+        return
+
+    plt.figure(figsize=(12, 6))
+
+    # Plot original waveform
+    plt.subplot(3, 1, 1)
+    plt.plot(recorded_audio, color='b')
+    plt.title("Original Audio Waveform")
+    plt.xlabel("Sample")
+    plt.ylabel("Amplitude")
+
+    # Plot frequency domain representation (Fourier Transform)
+    transformed_audio = np.abs(np.fft.fft(recorded_audio))
+    plt.subplot(3, 1, 2)
+    plt.plot(transformed_audio, color='orange')
+    plt.title("Fourier Transform (Before Encryption)")
+    plt.xlabel("Frequency Bin")
+    plt.ylabel("Magnitude")
+
+    # Plot encrypted waveform as pseudo-random noise
+    if encrypted_audio is not None:
+        encrypted_data = np.frombuffer(encrypted_audio, dtype=np.uint8)
+        plt.subplot(3, 1, 3)
+        plt.plot(encrypted_data, color='r')
+        plt.title("AES Encrypted Data (Not a Waveform)")
+        plt.xlabel("Byte Index")
+        plt.ylabel("Value")
+
+    plt.tight_layout()
+    plt.show()
+
+
+
+
 # GUI Setup
 window = tk.Tk()
 window.title("Real-Time AES Audio Encryption")
@@ -167,7 +206,8 @@ tk.Button(button_frame, text="🔑 View Key", command=show_key, width=20, height
 tk.Button(button_frame, text="🔄 Change Key", command=change_key, width=20, height=2).grid(row=5, column=1, padx=10, pady=10)
 
 # Row 6: Generate New Key
-tk.Button(button_frame, text="✨ Generate New Key", command=generate_new_key, width=20, height=2).grid(row=6, column=0, columnspan=2, padx=10, pady=10)
+tk.Button(button_frame, text="✨ Generate New Key", command=generate_new_key, width=20, height=2).grid(row=6, column=0, padx=10, pady=10)
+tk.Button(button_frame, text="📊 View Waveforms", command=view_all_waveforms, width=20, height=2).grid(row=6, column=1, padx=10, pady=10)
 
 # Run the application
 window.mainloop()
