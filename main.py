@@ -4,6 +4,7 @@ import numpy as np
 from audio_utils import record_audio, play_audio, save_audio
 from encryptor import encrypt_audio, decrypt_audio, view_key, save_custom_key, generate_key
 import matplotlib.pyplot as plt
+from scipy.io.wavfile import read as wav_read, write as wav_write
 
 # Global variables
 sample_rate = None
@@ -15,6 +16,14 @@ def start_recording():
     global sample_rate, recorded_audio
     sample_rate, recorded_audio = record_audio()
     messagebox.showinfo("Success", "Recording complete! You can now encrypt the audio.")
+
+# Function to upload an audio file
+def upload_audio():
+    global sample_rate, recorded_audio
+    file_path = filedialog.askopenfilename(filetypes=[("Audio Files", "*.wav")])
+    if file_path:
+        sample_rate, recorded_audio = wav_read(file_path)
+        messagebox.showinfo("Success", "Audio file uploaded successfully!")
 
 def encrypt():
     global encrypted_audio
@@ -37,9 +46,6 @@ def play_original():
         play_audio(recorded_audio, sample_rate)
     else:
         messagebox.showwarning("Warning", "Record audio first!")
-
-def play_encrypted():
-    messagebox.showwarning("Warning", "Encrypted audio is secured and cannot be played directly!")
 
 def play_decrypted():
     if decrypted_audio is not None:
@@ -183,14 +189,14 @@ button_frame.grid(row=0, column=0, padx=10, pady=10)
 # Use grid for better button arrangement
 # Row 0: Recording 
 tk.Button(button_frame, text="🎤 Record Audio", command=start_recording, width=20, height=2).grid(row=0, column=0, padx=10, pady=10)
-tk.Button(button_frame, text="▶️ Play Original", command=play_original, width=20, height=2).grid(row=0, column=1, padx=10, pady=10)
+tk.Button(button_frame, text="📂 Upload Audio", command=upload_audio, width=20, height=2).grid(row=0, column=1, padx=10, pady=10)
 
 # Row 1: Encryption and Decryption
 tk.Button(button_frame, text="🔒 Encrypt Audio", command=encrypt, width=20, height=2).grid(row=1, column=0, padx=10, pady=10)
 tk.Button(button_frame, text="🔓 Decrypt Audio", command=decrypt, width=20, height=2).grid(row=1, column=1, padx=10, pady=10)
 
 # Row 2: Playback
-tk.Button(button_frame, text="🚫 Play Encrypted", command=play_encrypted, width=20, height=2).grid(row=2, column=0, padx=10, pady=10)
+tk.Button(button_frame, text="▶️ Play Original", command=play_original, width=20, height=2).grid(row=2, column=0, padx=10, pady=10)
 tk.Button(button_frame, text="▶️ Play Decrypted", command=play_decrypted, width=20, height=2).grid(row=2, column=1, padx=10, pady=10)
 
 # Row 3: Save Files
