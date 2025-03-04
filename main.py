@@ -133,7 +133,7 @@ def view_all_waveforms():
         messagebox.showwarning("Warning", "Record audio first!")
         return
 
-    plt.figure(figsize=(12, 6))
+    plt.figure(figsize=(12, 8))  # Made figure taller for better visibility
 
     # Plot original waveform
     plt.subplot(3, 1, 1)
@@ -150,14 +150,19 @@ def view_all_waveforms():
     plt.xlabel("Frequency Bin")
     plt.ylabel("Magnitude")
 
-    # Plot encrypted waveform as pseudo-random noise
+    # Plot encrypted data visualization
     if encrypted_audio is not None:
+        # Convert encrypted bytes to numerical array and reshape if needed
         encrypted_data = np.frombuffer(encrypted_audio, dtype=np.uint8)
+        # Take a subset of data points to make the plot more manageable
+        plot_length = min(len(encrypted_data), 10000)
         plt.subplot(3, 1, 3)
-        plt.plot(encrypted_data, color='r')
-        plt.title("AES Encrypted Data (Not a Waveform)")
-        plt.xlabel("Byte Index")
-        plt.ylabel("Value")
+        plt.plot(encrypted_data[:plot_length], color='r', linewidth=0.5)
+        plt.title("Encrypted Data Pattern")
+        plt.xlabel("Sample Index")
+        plt.ylabel("Byte Value")
+        # Add grid for better visibility
+        plt.grid(True, alpha=0.3)
 
     plt.tight_layout()
     plt.show()
@@ -168,7 +173,7 @@ def view_all_waveforms():
 # GUI Setup
 window = tk.Tk()
 window.title("Real-Time AES Audio Encryption")
-window.geometry("400x600")  # Adjusted window size
+window.geometry("600x680")  # Adjusted window size to accommodate the title
 
 # Center the window on the screen
 window.update_idletasks()
@@ -178,42 +183,67 @@ x = (screen_width - window.winfo_width()) // 2
 y = (screen_height - window.winfo_height()) // 2
 window.geometry(f"+{x}+{y}")
 
-# Configure grid to center content
-window.grid_columnconfigure(0, weight=1)  # Center the single column
-window.grid_rowconfigure(0, weight=1)     # Center the single row
+# Create a frame for the title (using pack)
+title_frame = tk.Frame(window)
+title_frame.pack(pady=(20, 10))
 
-# Create a frame to hold the buttons and center it
+# Add multi-line title labels to the title frame
+title_label1 = tk.Label(
+    title_frame,
+    text="Welcome to",
+    font=("Montserrat", 25),
+    fg="#222"
+)
+title_label1.pack(pady=(0, 1))  # Small padding below
+
+title_label2 = tk.Label(
+    title_frame,
+    text="Audio Encryption & Decryption System",
+    font=("Rockwell", 22, "bold"),
+    fg="#222"
+)
+title_label2.pack(pady=(1, 1))  # Small padding below
+
+title_label3 = tk.Label(
+    title_frame,
+    text="🔒🎤 Secure Your Voice, Protect Your Privacy! \nEncrypt your voice data and decrypt it only when needed 🎤🔒",
+    font=("Montserrat", 12),
+    fg="#222"
+)
+title_label3.pack(pady=(1, 20))  # Larger padding below
+
+# Create a frame for the buttons (using grid)
 button_frame = tk.Frame(window)
-button_frame.grid(row=0, column=0, padx=10, pady=10)
+button_frame.pack(pady=(10, 20))
 
-# Use grid for better button arrangement
-# Row 0: Recording 
-tk.Button(button_frame, text="🎤 Record Audio", command=start_recording, width=20, height=2).grid(row=0, column=0, padx=10, pady=10)
-tk.Button(button_frame, text="📂 Upload Audio", command=upload_audio, width=20, height=2).grid(row=0, column=1, padx=10, pady=10)
+# Use grid for better button arrangement inside the button_frame
+# Row 0: Recording
+tk.Button(button_frame, text="🎤 Record Audio", command=start_recording, width=20, height=2, bg="#ffdc52", font=("Arial", 10, "bold")).grid(row=0, column=0, padx=10, pady=10)
+tk.Button(button_frame, text="📂 Upload Audio", command=upload_audio, width=20, height=2, bg="#ffdc52", font=("Arial", 10, "bold")).grid(row=0, column=1, padx=10, pady=10)
 
 # Row 1: Encryption and Decryption
-tk.Button(button_frame, text="🔒 Encrypt Audio", command=encrypt, width=20, height=2).grid(row=1, column=0, padx=10, pady=10)
-tk.Button(button_frame, text="🔓 Decrypt Audio", command=decrypt, width=20, height=2).grid(row=1, column=1, padx=10, pady=10)
+tk.Button(button_frame, text="🔒 Encrypt Audio", command=encrypt, width=20, height=2, bg="#ffdc52", font=("Arial", 10, "bold")).grid(row=1, column=0, padx=10, pady=10)
+tk.Button(button_frame, text="🔓 Decrypt Audio", command=decrypt, width=20, height=2, bg="#ffdc52", font=("Arial", 10, "bold")).grid(row=1, column=1, padx=10, pady=10)
 
 # Row 2: Playback
-tk.Button(button_frame, text="▶️ Play Original", command=play_original, width=20, height=2).grid(row=2, column=0, padx=10, pady=10)
-tk.Button(button_frame, text="▶️ Play Decrypted", command=play_decrypted, width=20, height=2).grid(row=2, column=1, padx=10, pady=10)
+tk.Button(button_frame, text="▶️ Play Original", command=play_original, width=20, height=2, bg="#ffdc52", font=("Arial", 10, "bold")).grid(row=2, column=0, padx=10, pady=10)
+tk.Button(button_frame, text="▶️ Play Decrypted", command=play_decrypted, width=20, height=2, bg="#ffdc52", font=("Arial", 10, "bold")).grid(row=2, column=1, padx=10, pady=10)
 
 # Row 3: Save Files
-tk.Button(button_frame, text="💾 Save Encrypted", command=save_encrypted, width=20, height=2).grid(row=3, column=0, padx=10, pady=10)
-tk.Button(button_frame, text="💾 Save Decrypted", command=save_decrypted, width=20, height=2).grid(row=3, column=1, padx=10, pady=10)
+tk.Button(button_frame, text="💾 Save Encrypted", command=save_encrypted, width=20, height=2, bg="#ffdc52", font=("Arial", 10, "bold")).grid(row=3, column=0, padx=10, pady=10)
+tk.Button(button_frame, text="💾 Save Decrypted", command=save_decrypted, width=20, height=2, bg="#ffdc52", font=("Arial", 10, "bold")).grid(row=3, column=1, padx=10, pady=10)
 
 # Row 4: Upload and Decrypt
-tk.Button(button_frame, text="📂 Upload & Decrypt", command=upload_and_decrypt, width=20, height=2).grid(row=4, column=0, padx=10, pady=10)
-tk.Button(button_frame, text="▶️ Play Decrypted File", command=play_uploaded_decrypted, width=20, height=2).grid(row=4, column=1, padx=10, pady=10)
+tk.Button(button_frame, text="📂 Upload & Decrypt", command=upload_and_decrypt, width=20, height=2, bg="#ffdc52", font=("Arial", 10, "bold")).grid(row=4, column=0, padx=10, pady=10)
+tk.Button(button_frame, text="▶️ Play Decrypted File", command=play_uploaded_decrypted, width=20, height=2, bg="#ffdc52", font=("Arial", 10, "bold")).grid(row=4, column=1, padx=10, pady=10)
 
 # Row 5: Key Management
-tk.Button(button_frame, text="🔑 View Key", command=show_key, width=20, height=2).grid(row=5, column=0, padx=10, pady=10)
-tk.Button(button_frame, text="🔄 Change Key", command=change_key, width=20, height=2).grid(row=5, column=1, padx=10, pady=10)
+tk.Button(button_frame, text="🔑 View Key", command=show_key, width=20, height=2, bg="#ffdc52", font=("Arial", 10, "bold")).grid(row=5, column=0, padx=10, pady=10)
+tk.Button(button_frame, text="🔄 Change Key", command=change_key, width=20, height=2, bg="#ffdc52", font=("Arial", 10, "bold")).grid(row=5, column=1, padx=10, pady=10)
 
 # Row 6: Generate New Key
-tk.Button(button_frame, text="✨ Generate New Key", command=generate_new_key, width=20, height=2).grid(row=6, column=0, padx=10, pady=10)
-tk.Button(button_frame, text="📊 View Waveforms", command=view_all_waveforms, width=20, height=2).grid(row=6, column=1, padx=10, pady=10)
+tk.Button(button_frame, text="✨ Generate New Key", command=generate_new_key, width=20, height=2, bg="#ffdc52", font=("Arial", 10, "bold")).grid(row=6, column=0, padx=10, pady=10)
+tk.Button(button_frame, text="📊 View Waveforms", command=view_all_waveforms, width=20, height=2, bg="#ffdc52", font=("Arial", 10, "bold")).grid(row=6, column=1, padx=10, pady=10)
 
 # Run the application
 window.mainloop()
