@@ -1,13 +1,44 @@
 import sounddevice as sd
 import wave
+import numpy as np
+import threading
+import queue
 
 # Record real-time audio from the microphone
-def record_audio(duration=5, sample_rate=44100):
+def record_audio(callback=None):
+    # Create a queue to store audio chunks
+    audio_queue = queue.Queue()
+    # Flag to control recording
+    recording = True
+
+    def audio_callback(indata, frames, time, status):
+        if status:
+            print(status)
+        if recording:
+            audio_queue.put(indata.copy())
+
+    # Create an input stream
+    stream = sd.InputStream(samplerate=44100, channels=1, dtype='int16', callback=audio_callback)
+    
+    def stop_recording():
+        nonlocal recording
+        recording = False
+        stream.stop()
+        stream.close()
+        
+        # Combine all audio chunks
+        audio_chunks = []
+        while not audio_queue.empty():
+            audio_chunks.append(audio_queue.get())
+        
+        if audio_chunks:
+            complete_audio = np.concatenate(audio_chunks)
+            if callback:
+                callback(44100, complete_audio)
+    
     print("🎤 Recording... Speak Now!")
-    audio = sd.rec(int(duration * sample_rate), samplerate=sample_rate, channels=1, dtype="int16")
-    sd.wait()
-    print("✅ Recording complete!")
-    return sample_rate, audio
+    stream.start()
+    return stop_recording
 
 # Save audio to a WAV file
 def save_audio(file_path, sample_rate, data):

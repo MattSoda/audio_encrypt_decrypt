@@ -12,7 +12,6 @@ recorded_audio = None
 encrypted_audio = None
 decrypted_audio = None
 stop_recording_func = None
-is_uploaded_file = False
   
 def recording_callback(sr, audio):
     global sample_rate, recorded_audio
@@ -45,12 +44,11 @@ def upload_audio():
         messagebox.showinfo("Success", "Audio file uploaded successfully!")
 
 def encrypt():
-    global encrypted_audio, is_uploaded_file
+    global encrypted_audio
     if recorded_audio is None:
         messagebox.showwarning("Warning", "Record audio first!")
         return
     encrypted_audio = encrypt_audio(recorded_audio)
-    is_uploaded_file = False  # Reset flag when encrypting new audio
     messagebox.showinfo("Success", "Audio encrypted!")
 
 def decrypt():
@@ -58,17 +56,8 @@ def decrypt():
     if encrypted_audio is None:
         messagebox.showwarning("Warning", "Encrypt audio first!")
         return
-    try:
-        decrypted_audio = decrypt_audio(encrypted_audio)
-        # Ensure the decrypted audio is in the correct format and shape
-        if isinstance(decrypted_audio, np.ndarray):
-            if decrypted_audio.dtype != np.int16:
-                decrypted_audio = decrypted_audio.astype(np.int16)
-        else:
-            decrypted_audio = np.frombuffer(decrypted_audio, dtype=np.int16)
-        messagebox.showinfo("Success", "Audio decrypted!")
-    except Exception as e:
-        messagebox.showerror("Error", "Failed to decrypt audio properly.")
+    decrypted_audio = decrypt_audio(encrypted_audio)
+    messagebox.showinfo("Success", "Audio decrypted!")
 
 def play_original():
     if recorded_audio is not None:
@@ -77,40 +66,10 @@ def play_original():
         messagebox.showwarning("Warning", "Record audio first!")
 
 def play_decrypted():
-    if decrypted_audio is not None and sample_rate is not None:
-        try:
-            if is_uploaded_file:
-                # Play encrypted and decrypted original audio at half speed
-                playback_rate = sample_rate // 2
-                play_audio(decrypted_audio, playback_rate)
-            else:
-                # Play uploaded and decrypted file at normal speed
-                play_audio(decrypted_audio, sample_rate)
-        except Exception as e:
-            messagebox.showerror("Playback Error", "Error playing decrypted audio. Please try decrypting again.")
+    if decrypted_audio is not None:
+        play_audio(decrypted_audio, sample_rate)
     else:
         messagebox.showwarning("Warning", "Decrypt audio first!")
-
-def play_encrypted():
-    if encrypted_audio is not None:
-        try:
-            # Convert encrypted bytes to audio samples
-            encrypted_samples = np.frombuffer(encrypted_audio, dtype=np.uint8)
-            # Scale the samples to int16 range for playback
-            scaled_samples = ((encrypted_samples.astype(np.float32) / 255) * 65535 - 32768).astype(np.int16)
-            
-            # Calculate how many samples for 5 seconds
-            samples_per_second = 44100  # Standard sample rate
-            samples_5_seconds = samples_per_second * 5
-            
-            # Take only 5 seconds worth of samples
-            samples_to_play = scaled_samples[:samples_5_seconds]
-            
-            play_audio(samples_to_play, 44100)  # Use standard sample rate
-        except Exception as e:
-            messagebox.showerror("Playback Error", "Error playing encrypted audio.")
-    else:
-        messagebox.showwarning("Warning", "Encrypt audio first!")
 
 def save_encrypted():
     if encrypted_audio is not None:
@@ -126,71 +85,25 @@ def save_decrypted():
     if decrypted_audio is not None:
         file_path = filedialog.asksaveasfilename(defaultextension=".wav", filetypes=[("WAV Files", "*.wav")])
         if file_path:
-            try:
-                # Ensure the audio data is in the correct format
-                audio_to_save = decrypted_audio
-                if not isinstance(audio_to_save, np.ndarray):
-                    audio_to_save = np.frombuffer(audio_to_save, dtype=np.int16)
-                elif audio_to_save.dtype != np.int16:
-                    audio_to_save = audio_to_save.astype(np.int16)
-                save_audio(file_path, sample_rate, audio_to_save)
-                messagebox.showinfo("Success", "Decrypted audio saved successfully!")
-            except Exception as e:
-                messagebox.showerror("Error", "Failed to save decrypted audio.")
+            save_audio(file_path, sample_rate, decrypted_audio)
+            messagebox.showinfo("Success", "Decrypted audio saved successfully!")
     else:
         messagebox.showwarning("Warning", "Decrypt audio first!")
 
 def upload_and_decrypt():
-    global decrypted_audio, sample_rate, encrypted_audio, is_uploaded_file
+    global decrypted_audio
     file_path = filedialog.askopenfilename(filetypes=[("Encrypted Files", "*.enc")])
     
     if file_path:
-        try:
-            with open(file_path, "rb") as f:
-                encrypted_data = f.read()
-            
-            encrypted_audio = encrypted_data
-            # Use a standard sample rate for audio playback
-            sample_rate = 44100  # Standard sample rate
-            # Decrypt the audio
-            decrypted_audio = decrypt_audio(encrypted_data)
-            
-            # Ensure proper audio format
-            if isinstance(decrypted_audio, np.ndarray):
-                if decrypted_audio.dtype != np.int16:
-                    decrypted_audio = decrypted_audio.astype(np.int16)
-            else:
-                decrypted_audio = np.frombuffer(decrypted_audio, dtype=np.int16)
-            
-            # Set flag for uploaded file
-            is_uploaded_file = True
-            
-            messagebox.showinfo("Success", "Encrypted file decrypted successfully!")
-        except Exception as e:
-            if "Invalid token" in str(e):
-                messagebox.showerror("Decryption Error", "Unable to decrypt the file. The encryption key is incorrect!")
-            else:
-                messagebox.showerror("Error", f"An error occurred while decrypting: {str(e)}")
+        with open(file_path, "rb") as f:
+            encrypted_data = f.read()
+        
+        decrypted_audio = decrypt_audio(encrypted_data)
+        messagebox.showinfo("Success", "Encrypted file decrypted successfully!")
 
 def play_uploaded_decrypted():
-    if decrypted_audio is not None and sample_rate is not None:
-        try:
-            # Ensure the audio data is in the correct format
-            audio_to_play = decrypted_audio
-            if not isinstance(audio_to_play, np.ndarray):
-                audio_to_play = np.frombuffer(audio_to_play, dtype=np.int16)
-            elif audio_to_play.dtype != np.int16:
-                audio_to_play = audio_to_play.astype(np.int16)
-            
-            if is_uploaded_file:
-                # Play uploaded and decrypted file at normal speed
-                play_audio(audio_to_play, sample_rate)
-            else:
-                # Play encrypted and decrypted original audio at half speed
-                playback_rate = sample_rate // 2
-                play_audio(audio_to_play, playback_rate)
-        except Exception as e:
-            messagebox.showerror("Playback Error", "Error playing decrypted audio. Please try decrypting again.")
+    if decrypted_audio is not None:
+        play_audio(decrypted_audio, sample_rate)
     else:
         messagebox.showwarning("Warning", "Upload and decrypt an audio file first!")
 
@@ -287,7 +200,7 @@ def view_all_waveforms():
     plt.ylabel("Magnitude")
     plt.grid(True, alpha=0.3)
 
-# Plot encrypted data visualization
+    # Plot encrypted data visualization
     if encrypted_audio is not None:
         # Convert encrypted bytes to numerical array
         encrypted_data = np.frombuffer(encrypted_audio, dtype=np.uint8)
@@ -359,26 +272,23 @@ button_frame.pack(pady=10)
 
 # Row 1: Record and Upload
 ttk.Button(button_frame, text="🎤 Record Audio", command=start_recording, width=25).grid(row=0, column=0, padx=15, pady=10)
-ttk.Button(button_frame, text="▶️ Play Original", command=play_original, width=25).grid(row=0, column=1, padx=15, pady=10)
-
-ttk.Button(button_frame, text="📂 Upload Audio", command=upload_audio, width=25).grid(row=1, column=0, padx=15, pady=10)
-ttk.Button(button_frame, text="📂 Upload & Decrypt", command=upload_and_decrypt, width=25).grid(row=1, column=1, padx=15, pady=10)
+ttk.Button(button_frame, text="📂 Upload Audio", command=upload_audio, width=25).grid(row=0, column=1, padx=15, pady=10)
 
 # Row 2: Encryption and Decryption
-ttk.Button(button_frame, text="🔒 Encrypt Audio", command=encrypt, width=25).grid(row=2, column=0, padx=15, pady=10)
-ttk.Button(button_frame, text="🔓 Decrypt Audio", command=decrypt, width=25).grid(row=2, column=1, padx=15, pady=10)
+ttk.Button(button_frame, text="🔒 Encrypt Audio", command=encrypt, width=25).grid(row=1, column=0, padx=15, pady=10)
+ttk.Button(button_frame, text="🔓 Decrypt Audio", command=decrypt, width=25).grid(row=1, column=1, padx=15, pady=10)
 
 # Row 3: Play Buttons
-ttk.Button(button_frame, text="▶️ Play Encrypted", command=play_encrypted, width=25).grid(row=3, column=0, padx=15, pady=10)
-ttk.Button(button_frame, text="▶️ Play Decrypted", command=play_decrypted, width=25).grid(row=3, column=1, padx=15, pady=10)
+ttk.Button(button_frame, text="▶️ Play Original", command=play_original, width=25).grid(row=2, column=0, padx=15, pady=10)
+ttk.Button(button_frame, text="▶️ Play Decrypted", command=play_decrypted, width=25).grid(row=2, column=1, padx=15, pady=10)
 
 # Row 4: Save Buttons
-ttk.Button(button_frame, text="💾 Save Encrypted", command=save_encrypted, width=25).grid(row=4, column=0, padx=15, pady=10)
-ttk.Button(button_frame, text="💾 Save Decrypted", command=save_decrypted, width=25).grid(row=4, column=1, padx=15, pady=10)
+ttk.Button(button_frame, text="💾 Save Encrypted", command=save_encrypted, width=25).grid(row=3, column=0, padx=15, pady=10)
+ttk.Button(button_frame, text="💾 Save Decrypted", command=save_decrypted, width=25).grid(row=3, column=1, padx=15, pady=10)
 
 # Key Management Section
 key_frame = tk.Frame(window, bg="#222831")
-key_frame.pack(pady=10)
+key_frame.pack(pady=15)
 
 ttk.Button(key_frame, text="🔑 Show Encryption Key", command=show_key, width=30).pack(pady=5)
 ttk.Button(key_frame, text="🔄 Change Key", command=change_key, width=30).pack(pady=5)
@@ -386,12 +296,12 @@ ttk.Button(key_frame, text="🔧 Generate New Key", command=generate_new_key, wi
 
 # Waveform Visualization Frame
 waveform_frame = tk.Frame(window, bg="#222831")
-waveform_frame.pack(pady=10)
+waveform_frame.pack(pady=15)
 
 # Simple waveform button
 ttk.Button(
     waveform_frame,
-    text="📊 View Original Waveform",
+    text="📊 View Simple Waveform",
     command=show_waveform,
     width=30
 ).pack(pady=5)

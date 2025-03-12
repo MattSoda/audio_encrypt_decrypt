@@ -4,7 +4,7 @@ import numpy as np
 from scipy.fft import fft, ifft
 
 # Path to the key file
-KEY_FILE_PATH = "audio_encrypt_decrypt/keys/secret.key"
+KEY_FILE_PATH = "keys/secret.key"
 
 # Ensure the keys directory exists
 os.makedirs(os.path.dirname(KEY_FILE_PATH), exist_ok=True)
@@ -46,14 +46,22 @@ def view_key():
 
 # Fourier Transform + AES Encryption
 def encrypt_audio(data):
-    transformed = fft(data.flatten())  # Convert to frequency domain
+    # Ensure data is flattened and in the correct format
+    data = np.array(data, dtype=np.int16).flatten()
+    transformed = fft(data)  # Convert to frequency domain
     aes = load_aes_key()
     encrypted_bytes = aes.encrypt(transformed.tobytes())  # AES encryption
     return encrypted_bytes
 
 # Fourier Transform + AES Decryption
 def decrypt_audio(encrypted_bytes):
-    aes = load_aes_key()
-    decrypted_bytes = aes.decrypt(encrypted_bytes)  # AES decryption
-    decrypted_data = np.frombuffer(decrypted_bytes, dtype=np.complex128)
-    return ifft(decrypted_data).real.astype(np.int16)  # Convert back to time domain
+    try:
+        aes = load_aes_key()
+        decrypted_bytes = aes.decrypt(encrypted_bytes)  # AES decryption
+        # Convert back to complex numbers for inverse FFT
+        decrypted_data = np.frombuffer(decrypted_bytes, dtype=np.complex128)
+        # Perform inverse FFT and ensure the output is in int16 format
+        audio_data = ifft(decrypted_data).real.astype(np.int16)
+        return audio_data
+    except Exception as e:
+        raise Exception(f"Decryption failed: {str(e)}")
